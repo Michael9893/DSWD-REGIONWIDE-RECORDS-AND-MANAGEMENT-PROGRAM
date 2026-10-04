@@ -24,6 +24,7 @@ interface FormsRepositoryProps {
   onOpenUpload: () => void;
   onDeleteForm?: (formId: string) => void;
   onLoadSamples?: () => void;
+  selectedCategoryFilter?: string;
 }
 
 const CATEGORIES: DocumentCategory[] = [
@@ -40,11 +41,18 @@ export const FormsRepository: React.FC<FormsRepositoryProps> = ({
   onDownloadForm,
   onOpenUpload,
   onDeleteForm,
-  onLoadSamples
+  onLoadSamples,
+  selectedCategoryFilter
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedCategory, setSelectedCategory] = useState<string>(selectedCategoryFilter || 'All');
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (selectedCategoryFilter) {
+      setSelectedCategory(selectedCategoryFilter);
+    }
+  }, [selectedCategoryFilter]);
 
   const filteredForms = useMemo(() => {
     return forms.filter((item) => {

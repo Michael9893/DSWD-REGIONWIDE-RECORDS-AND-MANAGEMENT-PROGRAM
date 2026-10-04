@@ -706,6 +706,7 @@ at your center archives before submitting electronic transmittals.
                   setUploadModalOpen(true);
                 }}
                 onDeleteForm={handleDeleteForm}
+                selectedCategoryFilter={navbarCategoryFilter}
               />
             )}
 
