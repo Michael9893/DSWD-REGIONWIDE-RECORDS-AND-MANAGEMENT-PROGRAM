@@ -1,0 +1,7 @@
+{
+  "name": "DSWD Regionwide Records & Management Portal",
+  "description": "Dual-facing web portal for DSWD providing public repositories, executive record monitoring (disposal & digitization), and messenger logistics tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
