@@ -32,7 +32,7 @@ interface IssuancesRepositoryProps {
 const ISSUANCE_TYPES: IssuanceType[] = [
   'Administrative Order',
   'Memorandum Circular',
-  'Regional Center Special Order (RCSO)',
+  'Regional Special Order (RSO)',
   'Special Order'
 ];
 
@@ -89,14 +89,14 @@ export const IssuancesRepository: React.FC<IssuancesRepositoryProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="font-bold text-slate-900 text-base">
-                  Administrative Issuances &amp; RCSO Repository
+                  Administrative Issuances &amp; RSO Repository
                 </h2>
                 <span className="px-2 py-0.5 text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 rounded">
                   Dual-Classification Protocol
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-                Standard circulars are open for immediate reading. Sensitive or restricted RCSOs (adoption registry, confidential casework, audit reports) require a formal <strong>Access Request Form</strong>.
+                Standard circulars are open for immediate reading. Sensitive or restricted RSOs (adoption registry, confidential casework, audit reports) require a formal <strong>Access Request Form</strong>.
               </p>
             </div>
           </div>
@@ -126,7 +126,7 @@ export const IssuancesRepository: React.FC<IssuancesRepositoryProps> = ({
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search issuances by order number (e.g., RCSO No. 09-2026), subject, or issuing office..."
+              placeholder="Search issuances by order number (e.g., RSO No. 09-2026), subject, or issuing office..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
@@ -222,7 +222,7 @@ export const IssuancesRepository: React.FC<IssuancesRepositoryProps> = ({
                 Administrative Issuances Repository Ready for Uploads
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                No circulars or RCSOs uploaded yet. You can upload official Administrative Orders, Memorandum Circulars, or Restricted Orders with access locks.
+                No circulars or RSOs uploaded yet. You can upload official Administrative Orders, Memorandum Circulars, or Restricted Orders with access locks.
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -268,7 +268,7 @@ export const IssuancesRepository: React.FC<IssuancesRepositoryProps> = ({
                     {item.isRestricted ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">
                         <Lock className="w-3 h-3 text-rose-700" />
-                        Restricted RCSO · Access Clearance Required
+                        Restricted RSO · Access Clearance Required
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">

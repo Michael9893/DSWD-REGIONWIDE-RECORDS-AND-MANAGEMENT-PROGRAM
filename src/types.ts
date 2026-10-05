@@ -24,12 +24,12 @@ export interface DocumentForm {
 export type IssuanceType = 
   | 'Administrative Order'
   | 'Memorandum Circular'
-  | 'Regional Center Special Order (RCSO)'
+  | 'Regional Special Order (RSO)'
   | 'Special Order';
 
 export interface Issuance {
   id: string;
-  number: string; // e.g., RCSO No. 18-2026
+  number: string; // e.g., RSO No. 18-2026
   title: string;
   type: IssuanceType;
   seriesYear: number;

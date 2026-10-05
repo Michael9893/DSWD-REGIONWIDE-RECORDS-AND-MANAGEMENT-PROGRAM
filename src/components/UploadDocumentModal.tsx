@@ -112,7 +112,7 @@ export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
         setError('Please enter the subject / title of the issuance.');
         return;
       }
-      const number = issuanceNumber.trim() || `${issuanceType === 'Regional Center Special Order (RCSO)' ? 'RCSO' : 'MC'} No. ${Math.floor(10 + Math.random() * 80)}-2026`;
+      const number = issuanceNumber.trim() || `${issuanceType === 'Regional Special Order (RSO)' ? 'RSO' : 'MC'} No. ${Math.floor(10 + Math.random() * 80)}-2026`;
 
       const newIssuance: Issuance = {
         id: `iss-${Date.now()}`,
@@ -185,7 +185,7 @@ export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
             }`}
           >
             <FileText className="w-4 h-4 text-blue-700" />
-            <span>Administrative Issuance / RCSO</span>
+            <span>Administrative Issuance / RSO</span>
           </button>
         </div>
 
@@ -309,7 +309,7 @@ export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
               </div>
             </div>
           ) : (
-            /* ISSUANCE / RCSO INPUTS */
+            /* ISSUANCE / RSO INPUTS */
             <div className="space-y-3.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -318,7 +318,7 @@ export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. AO No. 04, S. 2026 or RCSO No. 12-2026"
+                    placeholder="e.g. AO No. 04, S. 2026 or RSO No. 12-2026"
                     value={issuanceNumber}
                     onChange={(e) => setIssuanceNumber(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
@@ -337,7 +337,7 @@ export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
                   >
                     <option value="Administrative Order">Administrative Order (AO)</option>
                     <option value="Memorandum Circular">Memorandum Circular (MC)</option>
-                    <option value="Regional Center Special Order (RCSO)">Regional Center Special Order (RCSO)</option>
+                    <option value="Regional Special Order (RSO)">Regional Special Order (RSO)</option>
                     <option value="Special Order">Special Order (SO)</option>
                   </select>
                 </div>

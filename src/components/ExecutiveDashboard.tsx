@@ -265,7 +265,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
               <span className="text-sm font-semibold text-slate-500">pending</span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Restricted RCSO document requests requiring administrative authorization.
+              Restricted RSO document requests requiring administrative authorization.
             </p>
           </div>
           <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">

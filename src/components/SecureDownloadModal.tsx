@@ -278,7 +278,7 @@ Generated and Authenticated via DSWD Regionwide Records Portal (CY 2026)
                   className="w-full sm:flex-1 py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Download Authorized RCSO Package</span>
+                  <span>Download Authorized RSO Package</span>
                 </button>
                 <button
                   onClick={handleCopyLink}

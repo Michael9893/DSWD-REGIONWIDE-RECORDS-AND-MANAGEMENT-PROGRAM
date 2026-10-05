@@ -81,9 +81,9 @@ export const SAMPLE_ISSUANCES: Issuance[] = [
   },
   {
     id: 'iss-2',
-    number: 'RCSO No. 09-2026 (RESTRICTED)',
+    number: 'RSO No. 09-2026 (RESTRICTED)',
     title: 'Protocols on the Custody, Storage, and Restricted Access to Adoption Case Files and Protective Child Registry Records',
-    type: 'Regional Center Special Order (RCSO)',
+    type: 'Regional Special Order (RSO)',
     seriesYear: 2026,
     issuingOffice: 'Protective Services & Legal Unit',
     dateIssued: '2026-06-15',

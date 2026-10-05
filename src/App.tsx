@@ -75,7 +75,15 @@ export default function App() {
   const [issuances, setIssuances] = useState<Issuance[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_ISSUANCES_KEY);
-      return saved ? JSON.parse(saved) : [];
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.map((item: any) => ({
+          ...item,
+          type: item.type === 'Regional Center Special Order (RCSO)' ? 'Regional Special Order (RSO)' : item.type,
+          number: typeof item.number === 'string' ? item.number.replace(/\bRCSO\b/g, 'RSO') : item.number
+        }));
+      }
+      return [];
     } catch {
       return [];
     }
@@ -84,7 +92,14 @@ export default function App() {
   const [requests, setRequests] = useState<AccessRequest[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_REQUESTS_KEY);
-      return saved ? JSON.parse(saved) : [];
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.map((item: any) => ({
+          ...item,
+          issuanceNumber: typeof item.issuanceNumber === 'string' ? item.issuanceNumber.replace(/\bRCSO\b/g, 'RSO') : item.issuanceNumber
+        }));
+      }
+      return [];
     } catch {
       return [];
     }
@@ -212,7 +227,7 @@ export default function App() {
     );
   };
 
-  // Add Uploaded Issuance / RCSO
+  // Add Uploaded Issuance / RSO
   const handleAddIssuance = (newIssuance: Issuance) => {
     setIssuances((prev) => [newIssuance, ...prev]);
     setActiveView('public');
@@ -244,7 +259,7 @@ export default function App() {
 
   const handleLoadSampleIssuances = () => {
     setIssuances(SAMPLE_ISSUANCES);
-    triggerToast('Sample Issuances Loaded', 'Loaded standard Circulars & Restricted RCSO orders for testing.', 'info');
+    triggerToast('Sample Issuances Loaded', 'Loaded standard Circulars & Restricted RSO orders for testing.', 'info');
   };
 
   // 1. Submit Access Request for Restricted Document (Module A)
@@ -310,7 +325,7 @@ export default function App() {
     // Create Automated Delivery Notification
     const notifItem: NotificationItem = {
       id: `notif-${Date.now()}`,
-      title: 'Automated Delivery: Restricted RCSO Approved',
+      title: 'Automated Delivery: Restricted RSO Approved',
       message: `Access to ${target.issuanceNumber} granted for ${target.fullName}. A secured, time-sensitive download link (valid for ${validityHours}h) has been dispatched to ${target.dswdEmail}.`,
       timestamp: new Date().toISOString(),
       read: false,
@@ -646,7 +661,7 @@ at your center archives before submitting electronic transmittals.
                   : 'text-slate-600 hover:text-blue-700 hover:bg-blue-50/60'
               }`}
             >
-              Issuances &amp; RCSO ({issuances.length})
+              Issuances &amp; RSO ({issuances.length})
             </button>
             <button
               onClick={() => { setActiveView('public'); setActiveModuleTab('logistics'); }}
@@ -755,7 +770,7 @@ at your center archives before submitting electronic transmittals.
         )}
       </main>
 
-      {/* Modal: Upload Document (Form / Template or Issuance / RCSO) */}
+      {/* Modal: Upload Document (Form / Template or Issuance / RSO) */}
       {uploadModalOpen && (
         <UploadDocumentModal
           initialType={uploadModalType}
