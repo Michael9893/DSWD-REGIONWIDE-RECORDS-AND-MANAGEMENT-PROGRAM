@@ -39,6 +39,7 @@ export const SecureDownloadModal: React.FC<SecureDownloadModalProps> = ({
   // Automatically lookup if initialToken is provided
   useEffect(() => {
     if (initialToken) {
+      setTokenInput(initialToken);
       verifyToken(initialToken);
     }
   }, [initialToken, requests]);

@@ -1,0 +1,128 @@
+{
+  "entities": {
+    "DocumentForm": {
+      "title": "DocumentForm",
+      "description": "Records and Archives template or inventory form",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "fileType": { "type": "string" },
+        "fileSize": { "type": "string" },
+        "version": { "type": "string" },
+        "updatedDate": { "type": "string" },
+        "downloads": { "type": "number" },
+        "description": { "type": "string" },
+        "issuingUnit": { "type": "string" }
+      },
+      "required": ["id", "code", "title", "category", "fileType"]
+    },
+    "Issuance": {
+      "title": "Issuance",
+      "description": "Administrative issuance or Regional Special Order",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "number": { "type": "string" },
+        "title": { "type": "string" },
+        "type": { "type": "string" },
+        "seriesYear": { "type": "number" },
+        "issuingOffice": { "type": "string" },
+        "dateIssued": { "type": "string" },
+        "isRestricted": { "type": "boolean" },
+        "accessClassification": { "type": "string" },
+        "summary": { "type": "string" },
+        "pageCount": { "type": "number" }
+      },
+      "required": ["id", "number", "title", "type", "isRestricted"]
+    },
+    "AccessRequest": {
+      "title": "AccessRequest",
+      "description": "Formal access request for restricted RSO document",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "trackingCode": { "type": "string" },
+        "issuanceId": { "type": "string" },
+        "issuanceNumber": { "type": "string" },
+        "issuanceTitle": { "type": "string" },
+        "fullName": { "type": "string" },
+        "centerOffice": { "type": "string" },
+        "dswdEmail": { "type": "string" },
+        "justification": { "type": "string" },
+        "submittedAt": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "trackingCode", "fullName", "status"]
+    },
+    "DisposalBatch": {
+      "title": "DisposalBatch",
+      "description": "Physical records disposal batch and NAP endorsement",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "batchNumber": { "type": "string" },
+        "centerOffice": { "type": "string" },
+        "recordSeriesTitle": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "batchNumber", "centerOffice", "status"]
+    },
+    "LogisticsDelivery": {
+      "title": "LogisticsDelivery",
+      "description": "Physical document transmittal dispatch and messenger tracking",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "trackingNumber": { "type": "string" },
+        "subject": { "type": "string" },
+        "originOffice": { "type": "string" },
+        "destinationOffice": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "trackingNumber", "subject", "status"]
+    },
+    "NotificationItem": {
+      "title": "NotificationItem",
+      "description": "Portal notification or alert",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "read": { "type": "boolean" },
+        "type": { "type": "string" }
+      },
+      "required": ["id", "title", "message", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/forms/{formId}": {
+      "schema": "DocumentForm",
+      "description": "Public templates repository forms"
+    },
+    "/issuances/{issuanceId}": {
+      "schema": "Issuance",
+      "description": "Official issuances and Regional Special Orders"
+    },
+    "/requests/{requestId}": {
+      "schema": "AccessRequest",
+      "description": "Restricted document access clearance requests"
+    },
+    "/disposal_batches/{batchId}": {
+      "schema": "DisposalBatch",
+      "description": "Physical disposal monitoring batches"
+    },
+    "/deliveries/{deliveryId}": {
+      "schema": "LogisticsDelivery",
+      "description": "Physical transmittal dispatches and logistics"
+    },
+    "/notifications/{notifId}": {
+      "schema": "NotificationItem",
+      "description": "System broadcast notifications and audit trail"
+    }
+  }
+}

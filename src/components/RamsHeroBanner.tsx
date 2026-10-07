@@ -276,6 +276,18 @@ export const RamsHeroBanner: React.FC<RamsHeroBannerProps> = ({
               <Truck className="w-4 h-4" />
             </button>
 
+            {/* Real-time Multi-Device Sync Indicator */}
+            <div 
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 text-[11px] font-semibold"
+              title="Real-time multi-tab, incognito, and multi-device database synchronization is active"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>Real-Time Synced</span>
+            </div>
+
             <button
               onClick={onOpenNotifications}
               className="p-1.5 rounded-lg text-slate-600 hover:text-blue-900 hover:bg-slate-100 transition-colors cursor-pointer relative"

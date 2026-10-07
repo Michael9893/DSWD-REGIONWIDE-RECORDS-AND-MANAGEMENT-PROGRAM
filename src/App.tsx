@@ -48,6 +48,26 @@ import {
   Upload,
   Info
 } from 'lucide-react';
+import { 
+  subscribeToForms,
+  subscribeToIssuances,
+  subscribeToRequests,
+  subscribeToDisposalBatches,
+  subscribeToDeliveries,
+  subscribeToNotifications,
+  saveFormToFirestore,
+  deleteFormFromFirestore,
+  saveIssuanceToFirestore,
+  deleteIssuanceFromFirestore,
+  saveRequestToFirestore,
+  updateRequestInFirestore,
+  saveDisposalBatchToFirestore,
+  updateDisposalBatchInFirestore,
+  saveDeliveryToFirestore,
+  updateDeliveryInFirestore,
+  saveNotificationToFirestore,
+  markNotificationReadInFirestore
+} from './firebase';
 
 const STORAGE_FORMS_KEY = 'rams_portal_forms_empty_v1';
 const STORAGE_ISSUANCES_KEY = 'rams_portal_issuances_empty_v1';
@@ -62,7 +82,7 @@ export default function App() {
   const [navbarCategoryFilter, setNavbarCategoryFilter] = useState<string>('All');
   const [navbarIssuanceTypeFilter, setNavbarIssuanceTypeFilter] = useState<string>('All');
 
-  // Core Data States: 100% EMPTY by default per user request
+  // Core Data States - initialized from localStorage cache and synced via real-time Firestore
   const [forms, setForms] = useState<DocumentForm[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_FORMS_KEY);
@@ -126,6 +146,92 @@ export default function App() {
   });
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  // Real-time Firestore Subscriptions: Propagate across different tabs, incognito windows, and shared links
+  useEffect(() => {
+    let initialFormsChecked = false;
+    const unsubForms = subscribeToForms((liveForms) => {
+      setForms(liveForms);
+      if (!initialFormsChecked && liveForms.length === 0) {
+        initialFormsChecked = true;
+        try {
+          const cached = localStorage.getItem(STORAGE_FORMS_KEY);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              parsed.forEach((f) => saveFormToFirestore(f).catch(console.error));
+            }
+          }
+        } catch (e) {
+          console.warn('Initial forms cache sync note:', e);
+        }
+      }
+    });
+
+    let initialIssuancesChecked = false;
+    const unsubIssuances = subscribeToIssuances((liveIssuances) => {
+      setIssuances(liveIssuances);
+      if (!initialIssuancesChecked && liveIssuances.length === 0) {
+        initialIssuancesChecked = true;
+        try {
+          const cached = localStorage.getItem(STORAGE_ISSUANCES_KEY);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              parsed.forEach((i) => saveIssuanceToFirestore(i).catch(console.error));
+            }
+          }
+        } catch (e) {
+          console.warn('Initial issuances cache sync note:', e);
+        }
+      }
+    });
+
+    const unsubRequests = subscribeToRequests((liveRequests) => {
+      setRequests(liveRequests);
+    });
+
+    const unsubDisposal = subscribeToDisposalBatches((liveBatches) => {
+      setDisposalBatches(liveBatches);
+    });
+
+    const unsubDeliveries = subscribeToDeliveries((liveDeliveries) => {
+      setDeliveries(liveDeliveries);
+    });
+
+    const unsubNotifs = subscribeToNotifications((liveNotifs) => {
+      setNotifications(liveNotifs);
+    });
+
+    // In-browser BroadcastChannel for instant zero-latency cross-tab toast alert
+    let channel: BroadcastChannel | null = null;
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        channel = new BroadcastChannel('dswd_rams_live_sync');
+        channel.onmessage = (event) => {
+          if (event.data?.title) {
+            triggerToast(
+              event.data.title,
+              event.data.message || 'Propagated from another active window.',
+              'info'
+            );
+          }
+        };
+      } catch (e) {
+        console.warn('BroadcastChannel sync init:', e);
+      }
+    }
+
+    return () => {
+      unsubForms();
+      unsubIssuances();
+      unsubRequests();
+      unsubDisposal();
+      unsubDeliveries();
+      unsubNotifs();
+      if (channel) channel.close();
+    };
+  }, []);
 
   // Sync to localStorage
   useEffect(() => {
@@ -216,54 +322,96 @@ export default function App() {
   };
 
   // Add Uploaded Form / Template
-  const handleAddForm = (newForm: DocumentForm) => {
-    setForms((prev) => [newForm, ...prev]);
+  const handleAddForm = async (newForm: DocumentForm) => {
+    setForms((prev) => [newForm, ...prev.filter((f) => f.id !== newForm.id)]);
     setActiveView('public');
     setActiveModuleTab('forms');
     triggerToast(
       'Template Uploaded Successfully',
-      `"${newForm.title}" (${newForm.code}) is now live on the RAMS Portal for all regional centers.`,
+      `"${newForm.title}" (${newForm.code}) is now live across all active screens and tabs in real-time.`,
       'success'
     );
+    try {
+      await saveFormToFirestore(newForm);
+      if (typeof BroadcastChannel !== 'undefined') {
+        const bc = new BroadcastChannel('dswd_rams_live_sync');
+        bc.postMessage({
+          title: 'New Template Uploaded',
+          message: `"${newForm.title}" was added and synced.`
+        });
+        bc.close();
+      }
+    } catch (e) {
+      console.error('Error saving form to Firestore:', e);
+    }
   };
 
   // Add Uploaded Issuance / RSO
-  const handleAddIssuance = (newIssuance: Issuance) => {
-    setIssuances((prev) => [newIssuance, ...prev]);
+  const handleAddIssuance = async (newIssuance: Issuance) => {
+    setIssuances((prev) => [newIssuance, ...prev.filter((i) => i.id !== newIssuance.id)]);
     setActiveView('public');
     setActiveModuleTab('issuances');
     triggerToast(
       'Issuance Published Successfully',
-      `"${newIssuance.number}" (${newIssuance.accessClassification}) is now published to the repository.`,
+      `"${newIssuance.number}" (${newIssuance.accessClassification}) is now published and synced in real-time across all screens.`,
       'success'
     );
+    try {
+      await saveIssuanceToFirestore(newIssuance);
+      if (typeof BroadcastChannel !== 'undefined') {
+        const bc = new BroadcastChannel('dswd_rams_live_sync');
+        bc.postMessage({
+          title: 'New Issuance Published',
+          message: `"${newIssuance.number}" was published and synced in real-time.`
+        });
+        bc.close();
+      }
+    } catch (e) {
+      console.error('Error saving issuance to Firestore:', e);
+    }
   };
 
   // Delete Form
-  const handleDeleteForm = (formId: string) => {
+  const handleDeleteForm = async (formId: string) => {
     setForms((prev) => prev.filter((f) => f.id !== formId));
     triggerToast('Template Removed', 'Selected template was removed from the repository.', 'info');
+    try {
+      await deleteFormFromFirestore(formId);
+    } catch (e) {
+      console.error('Error deleting form from Firestore:', e);
+    }
   };
 
   // Delete Issuance
-  const handleDeleteIssuance = (issuanceId: string) => {
+  const handleDeleteIssuance = async (issuanceId: string) => {
     setIssuances((prev) => prev.filter((i) => i.id !== issuanceId));
     triggerToast('Issuance Removed', 'Selected issuance was removed from the repository.', 'info');
+    try {
+      await deleteIssuanceFromFirestore(issuanceId);
+    } catch (e) {
+      console.error('Error deleting issuance from Firestore:', e);
+    }
   };
 
   // Optional: Load sample data if requested by user for demo/testing
-  const handleLoadSampleForms = () => {
+  const handleLoadSampleForms = async () => {
     setForms(SAMPLE_FORMS);
     triggerToast('Sample Templates Loaded', 'Loaded standard NAP Annex templates for testing.', 'info');
+    for (const f of SAMPLE_FORMS) {
+      await saveFormToFirestore(f).catch(console.error);
+    }
   };
 
-  const handleLoadSampleIssuances = () => {
+  const handleLoadSampleIssuances = async () => {
     setIssuances(SAMPLE_ISSUANCES);
     triggerToast('Sample Issuances Loaded', 'Loaded standard Circulars & Restricted RSO orders for testing.', 'info');
+    for (const i of SAMPLE_ISSUANCES) {
+      await saveIssuanceToFirestore(i).catch(console.error);
+    }
   };
 
   // 1. Submit Access Request for Restricted Document (Module A)
-  const handleSubmitAccessRequest = (
+  const handleSubmitAccessRequest = async (
     data: Omit<AccessRequest, 'id' | 'trackingCode' | 'submittedAt' | 'status' | 'downloadAccessCount'>
   ) => {
     const trackingCode = `REQ-2026-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -296,30 +444,34 @@ export default function App() {
       `Tracking Code: ${trackingCode}. Routed to the Records Section (AD-RAMS) for review.`,
       'success'
     );
+
+    try {
+      await saveRequestToFirestore(newRequest);
+      await saveNotificationToFirestore(newNotif);
+    } catch (e) {
+      console.error('Error saving access request to Firestore:', e);
+    }
   };
 
   // 2. Approve Access Request in Executive Dashboard (Module B)
-  const handleApproveRequest = (requestId: string, notes?: string, validityHours = 48) => {
+  const handleApproveRequest = async (requestId: string, notes?: string, validityHours = 48) => {
     const target = requests.find((r) => r.id === requestId);
     if (!target) return;
 
     const secureToken = `SEC-DSWD-${Math.floor(1000 + Math.random() * 9000)}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     const expiresAt = new Date(Date.now() + validityHours * 60 * 60 * 1000).toISOString();
 
+    const updates: Partial<AccessRequest> = {
+      status: 'approved',
+      reviewedBy: 'Atty. Victoriano Ramos (Regional Director / AD-RAMS)',
+      reviewedAt: new Date().toISOString(),
+      adminNotes: notes || 'Approved for verified official casework audit.',
+      secureToken,
+      tokenExpiresAt: expiresAt
+    };
+
     setRequests((prev) =>
-      prev.map((r) =>
-        r.id === requestId
-          ? {
-              ...r,
-              status: 'approved',
-              reviewedBy: 'Atty. Victoriano Ramos (Regional Director / AD-RAMS)',
-              reviewedAt: new Date().toISOString(),
-              adminNotes: notes || 'Approved for verified official casework audit.',
-              secureToken,
-              tokenExpiresAt: expiresAt
-            }
-          : r
-      )
+      prev.map((r) => (r.id === requestId ? { ...r, ...updates } : r))
     );
 
     // Create Automated Delivery Notification
@@ -345,25 +497,29 @@ export default function App() {
       'Open Secure Link',
       secureToken
     );
+
+    try {
+      await updateRequestInFirestore(requestId, updates);
+      await saveNotificationToFirestore(notifItem);
+    } catch (e) {
+      console.error('Error updating request in Firestore:', e);
+    }
   };
 
   // 3. Deny Request
-  const handleDenyRequest = (requestId: string, reason: string) => {
+  const handleDenyRequest = async (requestId: string, reason: string) => {
     const target = requests.find((r) => r.id === requestId);
     if (!target) return;
 
+    const updates: Partial<AccessRequest> = {
+      status: 'denied',
+      reviewedBy: 'Records Section Management',
+      reviewedAt: new Date().toISOString(),
+      adminNotes: reason
+    };
+
     setRequests((prev) =>
-      prev.map((r) =>
-        r.id === requestId
-          ? {
-              ...r,
-              status: 'denied',
-              reviewedBy: 'Records Section Management',
-              reviewedAt: new Date().toISOString(),
-              adminNotes: reason
-            }
-          : r
-      )
+      prev.map((r) => (r.id === requestId ? { ...r, ...updates } : r))
     );
 
     const notifItem: NotificationItem = {
@@ -383,22 +539,26 @@ export default function App() {
       `Request ${target.trackingCode} marked as denied with feedback notes.`,
       'warning'
     );
+
+    try {
+      await updateRequestInFirestore(requestId, updates);
+      await saveNotificationToFirestore(notifItem);
+    } catch (e) {
+      console.error('Error updating request in Firestore:', e);
+    }
   };
 
   // 4. Sign and endorse disposal batch
-  const handleSignDisposalBatch = (batchId: string) => {
+  const handleSignDisposalBatch = async (batchId: string) => {
     const clearanceCode = `NAP-AUTH-2026-${Math.floor(100 + Math.random() * 900)}`;
+    const updates: Partial<DisposalBatch> = {
+      status: 'Scheduled for Shredding',
+      napClearanceNo: clearanceCode,
+      scheduledDestructionDate: '2026-11-15'
+    };
+
     setDisposalBatches((prev) =>
-      prev.map((b) =>
-        b.id === batchId
-          ? {
-              ...b,
-              status: 'Scheduled for Shredding',
-              napClearanceNo: clearanceCode,
-              scheduledDestructionDate: '2026-11-15'
-            }
-          : b
-      )
+      prev.map((b) => (b.id === batchId ? { ...b, ...updates } : b))
     );
 
     triggerToast(
@@ -406,10 +566,16 @@ export default function App() {
       `Clearance #${clearanceCode} issued. Scheduled for high-volume shredding on Nov 15, 2026.`,
       'success'
     );
+
+    try {
+      await updateDisposalBatchInFirestore(batchId, updates);
+    } catch (e) {
+      console.error('Error updating disposal batch in Firestore:', e);
+    }
   };
 
   // 5. Submit new disposal batch
-  const handleSubmitDisposalBatch = (
+  const handleSubmitDisposalBatch = async (
     batch: Omit<DisposalBatch, 'id' | 'batchNumber' | 'status' | 'submittedDate'>
   ) => {
     const batchNumber = `DISP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -429,10 +595,16 @@ export default function App() {
       `Batch ${batchNumber} (${batch.weightKg.toLocaleString()} kg) is awaiting Regional Director sign-off.`,
       'info'
     );
+
+    try {
+      await saveDisposalBatchToFirestore(newBatch);
+    } catch (e) {
+      console.error('Error saving disposal batch to Firestore:', e);
+    }
   };
 
   // 6. Submit new messenger dispatch (Module C)
-  const handleSubmitDispatch = (
+  const handleSubmitDispatch = async (
     dispatch: Omit<LogisticsDelivery, 'id' | 'trackingNumber' | 'status' | 'dispatchedAt' | 'checkpoints'>
   ) => {
     const trackingNumber = `DSWD-LOG-2026-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -461,10 +633,16 @@ export default function App() {
       `Tracking #${trackingNumber} assigned to ${dispatch.assignedMessenger}.`,
       'success'
     );
+
+    try {
+      await saveDeliveryToFirestore(newDelivery);
+    } catch (e) {
+      console.error('Error saving delivery to Firestore:', e);
+    }
   };
 
   // 7. Update delivery checkpoint / status
-  const handleUpdateDeliveryStatus = (
+  const handleUpdateDeliveryStatus = async (
     deliveryId: string, 
     newStatus: DeliveryStatus, 
     checkpointNote: string, 
@@ -475,54 +653,32 @@ export default function App() {
       ? `AR-2026-${Math.floor(1000 + Math.random() * 9000)}` 
       : undefined;
 
+    const currentDelivery = deliveries.find((d) => d.id === deliveryId);
+    const updatedCheckpoints = currentDelivery ? [
+      ...currentDelivery.checkpoints,
+      {
+        id: `cp-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        location,
+        statusNote: checkpointNote,
+        recordedBy: `Messenger Handover (${currentDelivery.assignedMessenger})`
+      }
+    ] : [];
+
+    const updates: Partial<LogisticsDelivery> = {
+      status: newStatus,
+      checkpoints: updatedCheckpoints,
+      actualDeliveredAt: newStatus === 'Delivered & Acknowledged' ? new Date().toISOString() : undefined,
+      receivedByName: recipientName,
+      acknowledgmentReceiptNo: receiptNo
+    };
+
     setDeliveries((prev) =>
-      prev.map((d) => {
-        if (d.id !== deliveryId) return d;
-
-        const updatedCheckpoints = [
-          ...d.checkpoints,
-          {
-            id: `cp-${Date.now()}`,
-            timestamp: new Date().toISOString(),
-            location,
-            statusNote: checkpointNote,
-            recordedBy: `Messenger Handover (${d.assignedMessenger})`
-          }
-        ];
-
-        return {
-          ...d,
-          status: newStatus,
-          checkpoints: updatedCheckpoints,
-          actualDeliveredAt: newStatus === 'Delivered & Acknowledged' ? new Date().toISOString() : d.actualDeliveredAt,
-          receivedByName: recipientName || d.receivedByName,
-          acknowledgmentReceiptNo: receiptNo || d.acknowledgmentReceiptNo
-        };
-      })
+      prev.map((d) => (d.id === deliveryId ? { ...d, ...updates } : d))
     );
 
     if (selectedDelivery && selectedDelivery.id === deliveryId) {
-      setSelectedDelivery((prev) =>
-        prev
-          ? {
-              ...prev,
-              status: newStatus,
-              actualDeliveredAt: newStatus === 'Delivered & Acknowledged' ? new Date().toISOString() : prev.actualDeliveredAt,
-              receivedByName: recipientName || prev.receivedByName,
-              acknowledgmentReceiptNo: receiptNo || prev.acknowledgmentReceiptNo,
-              checkpoints: [
-                ...prev.checkpoints,
-                {
-                  id: `cp-${Date.now()}`,
-                  timestamp: new Date().toISOString(),
-                  location,
-                  statusNote: checkpointNote,
-                  recordedBy: 'Courier Update'
-                }
-              ]
-            }
-          : null
-      );
+      setSelectedDelivery((prev) => (prev ? { ...prev, ...updates } : null));
     }
 
     triggerToast(
@@ -530,21 +686,38 @@ export default function App() {
       `Status updated to "${newStatus}" at ${location}.`,
       'info'
     );
+
+    try {
+      await updateDeliveryInFirestore(deliveryId, updates);
+    } catch (e) {
+      console.error('Error updating delivery in Firestore:', e);
+    }
   };
 
   // 8. Record download
   const handleRecordDownload = (requestId: string) => {
     setRequests((prev) =>
       prev.map((r) =>
-        r.id === requestId ? { ...r, downloadAccessCount: r.downloadAccessCount + 1 } : r
+        r.id === requestId ? { ...r, downloadAccessCount: (r.downloadAccessCount || 0) + 1 } : r
       )
     );
+    const target = requests.find((r) => r.id === requestId);
+    if (target) {
+      updateRequestInFirestore(requestId, {
+        downloadAccessCount: (target.downloadAccessCount || 0) + 1
+      }).catch(console.error);
+    }
   };
 
   const handleDownloadForm = (form: DocumentForm) => {
+    const updatedDownloads = (form.downloads || 0) + 1;
     setForms((prev) =>
-      prev.map((f) => (f.id === form.id ? { ...f, downloads: f.downloads + 1 } : f))
+      prev.map((f) => (f.id === form.id ? { ...f, downloads: updatedDownloads } : f))
     );
+    saveFormToFirestore({
+      ...form,
+      downloads: updatedDownloads
+    }).catch(console.error);
 
     const content = `DEPARTMENT OF SOCIAL WELFARE AND DEVELOPMENT
 ADMINISTRATIVE DIVISION - RECORDS AND ARCHIVES MANAGEMENT SECTION (AD-RAMS)
@@ -834,8 +1007,13 @@ at your center archives before submitting electronic transmittals.
           setActiveTokenCode(token);
           setTokenModalOpen(true);
         }}
-        onMarkAllAsRead={() => {
+        onMarkAllAsRead={async () => {
           setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+          for (const n of notifications) {
+            if (!n.read) {
+              await markNotificationReadInFirestore(n.id).catch(console.error);
+            }
+          }
         }}
       />
 
@@ -852,9 +1030,35 @@ at your center archives before submitting electronic transmittals.
             if (previewFormItem) {
               handleDownloadForm(previewFormItem);
             } else if (previewIssuanceItem) {
+              const content = `DEPARTMENT OF SOCIAL WELFARE AND DEVELOPMENT
+ADMINISTRATIVE DIVISION - RECORDS AND ARCHIVES MANAGEMENT SECTION (AD-RAMS)
+RAMS PORTAL (CY 2026)
+--------------------------------------------------------------------------------
+ADMINISTRATIVE ISSUANCE: ${previewIssuanceItem.number}
+TITLE: ${previewIssuanceItem.title}
+TYPE: ${previewIssuanceItem.type}
+SERIES YEAR: ${previewIssuanceItem.seriesYear}
+ISSUING OFFICE: ${previewIssuanceItem.issuingOffice}
+DATE ISSUED: ${previewIssuanceItem.dateIssued}
+CLASSIFICATION: ${previewIssuanceItem.accessClassification}
+
+SUMMARY & DIRECTIVES:
+${previewIssuanceItem.summary}
+--------------------------------------------------------------------------------
+Official circular authenticated via DSWD Regionwide Records & Archives Management Portal.`;
+              const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${previewIssuanceItem.number.replace(/[^a-zA-Z0-9]/g, '_')}_CIRCULAR.txt`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+
               triggerToast(
                 'Issuance Circular Downloaded',
-                `Official PDF copy of ${previewIssuanceItem.number} downloaded.`,
+                `Official copy of ${previewIssuanceItem.number} downloaded.`,
                 'success'
               );
             }

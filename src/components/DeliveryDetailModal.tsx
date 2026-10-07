@@ -42,6 +42,12 @@ export const DeliveryDetailModal: React.FC<DeliveryDetailModalProps> = ({
   const [checkpointNote, setCheckpointNote] = useState('');
   const [recipientNameInput, setRecipientNameInput] = useState('');
 
+  React.useEffect(() => {
+    if (delivery) {
+      setSelectedStatus(delivery.status);
+    }
+  }, [delivery?.id, delivery?.status]);
+
   if (!delivery) return null;
 
   const handleStatusSubmit = (e: React.FormEvent) => {
